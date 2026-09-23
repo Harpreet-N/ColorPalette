@@ -1,6 +1,10 @@
+# Rules without a leading slash match at ANY depth, so they keep working
+# wherever the app folder is moved (currently /Code). Rules with a leading
+# slash are deliberately pinned to the repo root.
+
 # dependencies
-/node_modules
-/.pnp
+node_modules/
+.pnp
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -8,31 +12,39 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
+# build output / caches
+.next/
+.vinext/
+.vercel
+dist/
+out/
+coverage/
+tsconfig.tsbuildinfo
+next-env.d.ts
+.wrangler/
 
-# next.js
-/.next/
-/.vinext/
-/out/
-
-# misc
-.DS_Store
+# local environment
+.env*
 *.pem
 
-# debug
+# editor / OS
+.idea/
+.DS_Store
+
+# agent tooling (plugin caches, not project code)
+.agents/
+skills-lock.json
+
+# debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local environment
-.env*
-
-# deployment and generated files
-.vercel
-next-env.d.ts
-/dist/
-/.wrangler/
-/outputs/
-/work/
+# workbench: marketing, notes, archived experiments.
+# Tracked: all of marketing/ (the carousels are a deliverable and are NOT
+# currently reproducible -- see workbench/marketing/README.md) and notes/.
+# Ignored: plugin output, verification screenshots, dead code.
+/workbench/brag/
+/workbench/screenshots/
+/workbench/archive/
