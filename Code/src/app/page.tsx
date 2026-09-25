@@ -542,6 +542,7 @@ export default function Home() {
       {screen === 'welcome' && (
         <WelcomeGate
           busy={account.status === 'loading'}
+          trouble={account.trouble}
           onGoogle={() => { settleAsked(); void account.signIn(); }}
           onSkip={() => { settleAsked(); setScreen('home'); }}
         />

@@ -16,10 +16,11 @@ import type { User as Account } from '@supabase/supabase-js';
  * The sign-in screen.
  * ------------------------------------------------------------------ */
 
-export function WelcomeGate({ onGoogle, onSkip, busy }: {
+export function WelcomeGate({ onGoogle, onSkip, busy, trouble }: {
   onGoogle: () => void;
   onSkip: () => void;
   busy: boolean;
+  trouble?: string;
 }) {
   return (
     <section className="gate">
@@ -31,6 +32,8 @@ export function WelcomeGate({ onGoogle, onSkip, busy }: {
           Sign in and your readings are saved to your account, so they are still
           here tomorrow and on whatever device you open Ochre with next.
         </p>
+
+        {trouble && <p className="gate-trouble" role="alert">{trouble}</p>}
 
         <div className="gate-actions">
           <button type="button" className="action action-primary gate-primary"

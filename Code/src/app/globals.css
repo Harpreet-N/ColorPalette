@@ -1061,3 +1061,12 @@ main.screen-frame ~ .site-legal-footer { display: none; }
   .gate-body { max-width: 25rem; }
   .gate-mark { margin-bottom: 4rem; }
 }
+
+.gate-trouble {
+  margin: 1.4rem 0 0;
+  padding: .7rem .85rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+  font-size: .82rem; line-height: 1.45;
+}
