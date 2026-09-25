@@ -2,14 +2,16 @@
 /* oxlint-disable next/no-img-element */
 
 import { Copy, Trash2 } from 'lucide-react';
+import type { ReactNode } from 'react';
 import type { PaletteColor, PaletteEntry } from '@/lib/palette';
 import { describe, distribution, family, FAMILY_TINT, rank, read } from '@/lib/reading';
 
-export function Wordmark({ line }: { line?: string }) {
+export function Wordmark({ line, action }: { line?: string; action?: ReactNode }) {
   return (
     <header className="wordmark">
       <span className="wordmark-name">ochre</span>
       {line && <span className="wordmark-line">{line}</span>}
+      {action && <div className="wordmark-action">{action}</div>}
     </header>
   );
 }

@@ -6,7 +6,7 @@ import {
   Library, Plus, Share2, Trash2, X,
 } from 'lucide-react';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { AccountBar, SyncState } from '@/components/ochre/account';
+import { UserMenu, WelcomeGate } from '@/components/ochre/account';
 import { FramePicker } from '@/components/ochre/frame-picker';
 import { Mosaic } from '@/components/ochre/mosaic';
 import { ColourRow, EntryCard, FamilyBar, MeasureCard, Wordmark } from '@/components/ochre/reading';
@@ -16,11 +16,12 @@ import {
   PaletteColor, PaletteEntry, readableInk, suggestedTitle,
 } from '@/lib/palette';
 import { useAccount } from '@/lib/account';
+import { cloudConfigured } from '@/lib/supabase';
 import { merge, pull, push, remove } from '@/lib/cloud';
 import { FAMILIES, FAMILY_TINT, family, greeting, read } from '@/lib/reading';
 import { haptic } from '@/lib/spring';
 
-type Screen = 'home' | 'frame' | 'analyzing' | 'reading' | 'journal';
+type Screen = 'welcome' | 'home' | 'frame' | 'analyzing' | 'reading' | 'journal';
 type Toast = { text: string; undo?: () => void };
 
 declare global {
@@ -33,6 +34,8 @@ declare global {
 
 const STORE_KEY = 'ochre-journal-v1';
 const LEGACY_KEY = 'field-palette-journal-v1';
+/** Remembers that the sign-in question has been answered, either way. */
+const ASKED_KEY = 'ochre-asked-v1';
 const MIN_COLOURS = 3;
 const POOL_SIZE = 16;
 const DEFAULT_COUNT = 8;
@@ -98,9 +101,19 @@ export default function Home() {
   const [photoOrigin, setPhotoOrigin] = useState('50% 50%');
   const [video, setVideo] = useState<File | null>(null);
   const [stored, setStored] = useState(0);
-  const [hello] = useState(() => greeting());
+  /**
+   * `/` is prerendered at build time, so any greeting baked into the HTML is
+   * the build machine's hour in its own timezone -- wrong for most visitors,
+   * most of the day, and a genuine hydration mismatch rather than cosmetic.
+   * The first paint keeps whatever the build produced so the headline is
+   * never empty, and the correct greeting is set the moment we are on the
+   * client and know the real local time.
+   */
+  const [hello, setHello] = useState(() => greeting());
+  useEffect(() => { setHello(greeting()); }, []);
   const account = useAccount();
-  const [sync, setSync] = useState<SyncState>('idle');
+  const [sync, setSync] = useState<'idle' | 'working' | 'error'>('idle');
+  const [asked, setAsked] = useState<boolean | null>(null);
   const signedIn = account.status === 'in';
 
   useEffect(() => {
@@ -110,6 +123,28 @@ export default function Home() {
       if (raw) queueMicrotask(() => setEntries(JSON.parse(raw)));
     } catch { /* Keep the journal usable if storage is unavailable. */ }
   }, []);
+
+  useEffect(() => {
+    try { setAsked(localStorage.getItem(ASKED_KEY) === 'yes'); }
+    catch { setAsked(true); }
+  }, []);
+
+  const settleAsked = useCallback(() => {
+    setAsked(true);
+    try { localStorage.setItem(ASKED_KEY, 'yes'); } catch { /* nothing to remember with */ }
+  }, []);
+
+  /**
+   * The sign-in question is asked once, on first arrival, as its own screen --
+   * and never again, whichever way it was answered. Signing in later is always
+   * possible from the corner control, so skipping is not a one-way door.
+   */
+  useEffect(() => {
+    if (asked !== false || !cloudConfigured) return;
+    if (account.status === 'loading' || account.status === 'unavailable') return;
+    if (account.status === 'in') { settleAsked(); return; }
+    setScreen((current) => (current === 'home' ? 'welcome' : current));
+  }, [asked, account.status, settleAsked]);
 
   // :active feedback needs a touch listener to fire on iOS.
   useEffect(() => {
@@ -472,13 +507,13 @@ export default function Home() {
   const selectedIndex = entry && selected ? entry.colors.findIndex((color) => color.hex === selected.hex) : 0;
   const latest = entries[0];
 
-  const accountBar = (
-    <AccountBar
-      status={account.status}
+  const corner = (
+    <UserMenu
+      user={account.user}
       label={account.label}
-      sync={sync}
-      count={entries.length}
-      onSignIn={() => { void account.signIn(); }}
+      signedIn={signedIn}
+      onJournal={() => setScreen('journal')}
+      onSignIn={() => setScreen('welcome')}
       onSignOut={() => {
         void account.signOut();
         setToast({ text: 'Signed out — this journal stays on this device' });
@@ -504,10 +539,18 @@ export default function Home() {
       <input ref={libraryRef} className="sr-only" type="file" accept="image/*,video/*"
         onChange={handleFile} aria-label="Choose a photograph or video from your library" />
 
+      {screen === 'welcome' && (
+        <WelcomeGate
+          busy={account.status === 'loading'}
+          onGoogle={() => { settleAsked(); void account.signIn(); }}
+          onSkip={() => { settleAsked(); setScreen('home'); }}
+        />
+      )}
+
       {screen === 'home' && (
         <section className="home">
-          <Wordmark line="colour, taken from the ground" />
-          <h1 className="hello">{hello}.</h1>
+          <Wordmark line="colour, taken from the ground" action={cloudConfigured ? corner : null} />
+          <h1 className="hello" suppressHydrationWarning>{hello}.</h1>
 
           {pickers}
           {error
@@ -517,8 +560,6 @@ export default function Home() {
                   ? 'Read on this device · kept in your account'
                   : 'Read on this device · nothing is uploaded'}
               </p>}
-
-          {accountBar}
 
           {latest ? (
             <>
@@ -742,7 +783,7 @@ export default function Home() {
 
       {screen === 'journal' && (
         <section className="journal">
-          <Wordmark />
+          <Wordmark action={cloudConfigured ? corner : null} />
           <h1 className="hello">Journal</h1>
           <p className="note note-left">
             {entries.length
@@ -750,7 +791,6 @@ export default function Home() {
               : 'Nothing kept yet'}
           </p>
 
-          {accountBar}
           {pickers}
 
           {entries.length > 0 && (

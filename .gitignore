@@ -46,3 +46,6 @@ yarn-error.log*
 # notes and archived experiments. It sits beside the code for convenience
 # only, is never imported, never deployed, and is not version controlled.
 /workbench/
+
+# Files delivered into the chat land here; they are not project files.
+/Claude outputs/

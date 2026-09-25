@@ -39,7 +39,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    /* Extensions (LanguageTool, Grammarly, password managers) add attributes
+       to <html> before React hydrates. Those mismatches are not ours and
+       cannot be prevented; suppressing here covers this element's own
+       attributes only, not the tree below it. */
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Self-hosted: no request leaves this origin to render text. */}
         <link rel="preload" as="font" type="font/woff2" crossOrigin="anonymous"
