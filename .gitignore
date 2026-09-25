@@ -25,6 +25,7 @@ next-env.d.ts
 
 # local environment
 .env*
+!.env.example
 *.pem
 
 # editor / OS
@@ -41,10 +42,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# workbench: marketing, notes, archived experiments.
-# Tracked: all of marketing/ (the carousels are a deliverable and are NOT
-# currently reproducible -- see workbench/marketing/README.md) and notes/.
-# Ignored: plugin output, verification screenshots, dead code.
-/workbench/brag/
-/workbench/screenshots/
-/workbench/archive/
+# workbench/ is not part of the project: marketing renders, screenshots,
+# notes and archived experiments. It sits beside the code for convenience
+# only, is never imported, never deployed, and is not version controlled.
+/workbench/

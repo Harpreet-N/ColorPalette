@@ -13,8 +13,8 @@ export default function AccessibilityPage() {
       <ul><li>The native camera, photo picker, share sheet, and colour picker depend on the browser and operating system.</li><li>Generated mosaics are inherently visual; extracted values are provided as a textual alternative.</li><li>Formal testing with a wider range of assistive technologies is still required.</li><li>Some very long user-created reading titles may need additional review at extreme text zoom levels.</li></ul>
     </LegalSection>
     <LegalSection title="Feedback and assistance">
-      <p>If a user encounters a barrier or needs information in another accessible form, contact <Placeholder>accessibility@example.com</Placeholder>. Include the page or action involved, the browser or assistive technology used where comfortable, and the preferred reply format.</p>
-      <p><strong>Response target:</strong> <Placeholder>Set a realistic response period, for example five business days</Placeholder>.</p>
+      <p>If a user encounters a barrier or needs information in another accessible form, contact <a href="mailto:harpreetneharyt@gmail.com">harpreetneharyt@gmail.com</a>. Include the page or action involved, the browser or assistive technology used where comfortable, and the preferred reply format.</p>
+      <p><strong>Response target:</strong> within ten business days, this being a privately run project maintained outside working hours.</p>
     </LegalSection>
     <LegalSection title="Austrian accessibility framework">
       <p>The Austrian Accessibility Act (Barrierefreiheitsgesetz, BaFG), which transposes the European Accessibility Act, has applied since <strong>28 June 2025</strong>. It does not cover every website: it covers defined products and services, among them e-commerce, consumer banking, e-books, ticketing and passenger-transport information, and telephone and audiovisual media services.</p>

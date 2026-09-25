@@ -27,10 +27,10 @@ export default function Terms() {
       <p>Austrian law applies, without depriving consumers of mandatory protection available under the law of their habitual residence. Mandatory statutory places of jurisdiction remain unaffected.</p>
       <p><strong>Alternative dispute resolution.</strong> The European Commission’s Online Dispute Resolution (ODR) platform was shut down on 20 July 2025 under Regulation (EU) 2024/3228. The link to it that Austrian and EU websites were previously required to display is now obsolete and should no longer be used — a dead ODR link is itself a defect.</p>
       <p>Consumers resident in the EU may still bring a complaint to a recognised alternative dispute resolution body under the Austrian Alternative Dispute Resolution Act (AStG). For disputes arising online, the body usually competent in Austria is the Internet Ombudsstelle: <a href="https://www.ombudsstelle.at/" target="_blank" rel="noreferrer">ombudsstelle.at ↗</a>.</p>
-      <p><strong>Participation:</strong> <Placeholder>State whether the operator is obliged to participate, or voluntarily agrees to, and give the contact email consumers should use first</Placeholder>. A trader who is neither obliged nor willing should say so plainly rather than stay silent.</p>
+      <p><strong>Participation:</strong> Ochre is provided privately, free of charge and non-commercially, so the operator is not a trader for these purposes and is under no obligation to take part in alternative dispute resolution, nor does the operator undertake to do so voluntarily. This is stated plainly rather than left silent. Complaints are welcome directly at <a href="mailto:harpreetneharyt@gmail.com">harpreetneharyt@gmail.com</a> and will be answered. If Ochre is ever monetised, this paragraph must be revisited.</p>
     </LegalSection>
     <LegalSection title="9. Contact">
-      <p>Questions about these terms: <Placeholder>legal@example.com</Placeholder>.</p>
+      <p>Questions about these terms: <a href="mailto:harpreetneharyt@gmail.com">harpreetneharyt@gmail.com</a>.</p>
     </LegalSection>
   </LegalShell>;
 }

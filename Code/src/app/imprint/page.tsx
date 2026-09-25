@@ -5,24 +5,24 @@ export default function Imprint() {
     <div className="legal-notice warning"><strong>Operator details required</strong><p>Replace the highlighted fields before making the application available to the public.</p></div>
     <LegalSection title="Service provider">
       <address>
-        <Placeholder>Full legal name / registered company</Placeholder><br />
+        Harpreet Nehar<br />
         <Placeholder>Street and building number</Placeholder><br />
         <Placeholder>Postal code, city, Austria</Placeholder>
       </address>
-      <p>Email: <Placeholder>legal@example.com</Placeholder><br />Telephone: <Placeholder>+43 …, if applicable</Placeholder></p>
+      <p>Email: <a href="mailto:harpreetneharyt@gmail.com">harpreetneharyt@gmail.com</a><br />Telephone: <Placeholder>+43 …, if applicable</Placeholder></p>
     </LegalSection>
     <LegalSection title="Business information">
       <dl className="legal-definition">
-        <div><dt>Legal form</dt><dd><Placeholder>Sole trader / GmbH / other</Placeholder></dd></div>
-        <div><dt>Company register number and court</dt><dd><Placeholder>FN …, Commercial Court …, if applicable</Placeholder></dd></div>
-        <div><dt>VAT identification number</dt><dd><Placeholder>ATU …, if applicable</Placeholder></dd></div>
-        <div><dt>Trade authority</dt><dd><Placeholder>Competent district authority, if applicable</Placeholder></dd></div>
-        <div><dt>Chamber membership</dt><dd><Placeholder>Wirtschaftskammer …, if applicable</Placeholder></dd></div>
-        <div><dt>Applicable professional rules</dt><dd><Placeholder>Trade regulation and relevant rules, if applicable</Placeholder></dd></div>
+        <div><dt>Legal form</dt><dd>Natural person. Ochre is operated privately and non-commercially, free of charge, with no advertising and no paid features.</dd></div>
+        <div><dt>Company register number and court</dt><dd>Not applicable — not entered in the Firmenbuch.</dd></div>
+        <div><dt>VAT identification number</dt><dd>Not applicable — no VAT registration.</dd></div>
+        <div><dt>Trade authority</dt><dd>Not applicable — no Gewerbeberechtigung is held for this service in its current non-commercial form.</dd></div>
+        <div><dt>Chamber membership</dt><dd>Not applicable.</dd></div>
+        <div><dt>Applicable professional rules</dt><dd>Not applicable.</dd></div>
       </dl>
     </LegalSection>
     <LegalSection title="Media disclosure">
-      <p><strong>Media owner:</strong> <Placeholder>Name or company</Placeholder><br /><strong>Business purpose:</strong> Development and operation of the Ochre digital application.<br /><strong>Registered office:</strong> <Placeholder>City, Austria</Placeholder><br /><strong>Persons authorised to represent the owner:</strong> <Placeholder>Name(s), if applicable</Placeholder></p>
+      <p><strong>Media owner:</strong> Harpreet Nehar<br /><strong>Business purpose:</strong> Development and operation of the Ochre digital application.<br /><strong>Registered office:</strong> <Placeholder>City, Austria</Placeholder><br /><strong>Persons authorised to represent the owner:</strong> Not applicable — the media owner is a natural person.</p>
       <p><strong>Editorial policy:</strong> Ochre provides a creative tool for reading and keeping the colours of photographed places. It does not pursue a political programme.</p>
     </LegalSection>
     <LegalSection title="Liability and copyright">

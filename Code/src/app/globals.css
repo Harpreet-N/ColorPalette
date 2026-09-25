@@ -923,3 +923,58 @@ h1, h2 { margin: 0; font-weight: 400; }
 main.screen-palette ~ .site-legal-footer { display: none; }
 main.screen-analyzing ~ .site-legal-footer { display: none; }
 main.screen-frame ~ .site-legal-footer { display: none; }
+
+/* ------------------------------------------------------------------ *
+ * Account — the one place the app talks about where a journal lives.
+ * Signed out it states a fact rather than nagging; signed in it gets
+ * quieter, because by then there is nothing to decide.
+ * ------------------------------------------------------------------ */
+
+.account {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: .55rem .7rem;
+  margin-top: .9rem;
+  padding: .85rem .95rem;
+  border-radius: 20px;
+  background: var(--ochre-wash);
+  color: var(--ink);
+}
+
+.account > svg {
+  width: 17px; height: 17px;
+  margin-top: .1rem;
+  color: var(--ochre-deep);
+  flex: none;
+}
+
+.account-line { margin: 0; font-size: .78rem; line-height: 1.45; }
+.account-line strong { display: block; font-weight: 600; }
+.account-line span { display: block; margin-top: .12rem; color: var(--ink-soft); font-size: .74rem; }
+
+.account-action { grid-column: 2; justify-self: start; margin-top: .3rem; }
+.account .action-quiet { min-height: 38px; padding: 0 .85rem; font-size: .76rem; }
+
+/* Signed in: the journal is safe, so the panel recedes to a plain note. */
+.account.is-on,
+.account.is-quiet {
+  background: var(--card);
+  padding: .7rem .8rem;
+}
+.account.is-on > svg,
+.account.is-quiet > svg { color: var(--stone); }
+.account.is-quiet .account-line { color: var(--stone); }
+
+.spin { animation: account-spin 900ms linear infinite; }
+
+@keyframes account-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spin { animation-duration: 2400ms; }
+}
+
+@media (min-width: 600px) {
+  .account { gap: .55rem .85rem; padding: 1rem 1.1rem; }
+  .account-line { font-size: .82rem; }
+}

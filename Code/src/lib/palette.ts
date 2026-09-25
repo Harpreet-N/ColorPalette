@@ -8,7 +8,12 @@ export type PaletteEntry = {
   id: string;
   title: string;
   createdAt: string;
+  /** A data URL while the reading is local; a signed URL once it is in an account. */
   image: string;
+  /** Where the photograph lives in Storage, once it has been backed up. */
+  imagePath?: string;
+  /** Last local change, used to settle local-versus-remote conflicts. */
+  updatedAt?: string;
   /** What the palette currently shows, weights renormalised to sum to 1. */
   colors: PaletteColor[];
   /** Everything the photograph gave up, most dominant first. */

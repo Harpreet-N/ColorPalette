@@ -6,6 +6,7 @@ import {
   Library, Plus, Share2, Trash2, X,
 } from 'lucide-react';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { AccountBar, SyncState } from '@/components/ochre/account';
 import { FramePicker } from '@/components/ochre/frame-picker';
 import { Mosaic } from '@/components/ochre/mosaic';
 import { ColourRow, EntryCard, FamilyBar, MeasureCard, Wordmark } from '@/components/ochre/reading';
@@ -14,6 +15,8 @@ import {
   extractPalette, imageFromDataUrl, imageFromFile, isVideo,
   PaletteColor, PaletteEntry, readableInk, suggestedTitle,
 } from '@/lib/palette';
+import { useAccount } from '@/lib/account';
+import { merge, pull, push, remove } from '@/lib/cloud';
 import { FAMILIES, FAMILY_TINT, family, greeting, read } from '@/lib/reading';
 import { haptic } from '@/lib/spring';
 
@@ -96,6 +99,9 @@ export default function Home() {
   const [video, setVideo] = useState<File | null>(null);
   const [stored, setStored] = useState(0);
   const [hello] = useState(() => greeting());
+  const account = useAccount();
+  const [sync, setSync] = useState<SyncState>('idle');
+  const signedIn = account.status === 'in';
 
   useEffect(() => {
     try {
@@ -126,6 +132,66 @@ export default function Home() {
       setStored(new Blob([raw]).size);
     } catch { setStored(0); }
   }, [entries]);
+
+  /**
+   * Signing in is a merge, not a takeover: whatever is already on this device
+   * joins whatever the account holds, and anything the account has not seen
+   * yet is uploaded. Readings made before signing in therefore survive, which
+   * is the whole point of letting people work signed out.
+   */
+  const syncedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!signedIn || !account.user) { syncedFor.current = null; return; }
+    const uid = account.user.id;
+    if (syncedFor.current === uid) return;
+    syncedFor.current = uid;
+
+    let alive = true;
+    void (async () => {
+      setSync('working');
+      try {
+        const remote = await pull();
+        let local: PaletteEntry[] = [];
+        try { local = JSON.parse(localStorage.getItem(STORE_KEY) ?? '[]'); } catch { /* start clean */ }
+
+        const merged = merge(local, remote);
+        const known = new Set(remote.map((item) => item.id));
+        const settled: PaletteEntry[] = [];
+        for (const item of merged) {
+          if (known.has(item.id) && item.imagePath) { settled.push(item); continue; }
+          try { settled.push(await push(item, uid)); }
+          catch { settled.push(item); }
+        }
+        if (!alive) return;
+        persist(settled);
+        setSync('idle');
+      } catch {
+        if (alive) setSync('error');
+      }
+    })();
+    return () => { alive = false; };
+  }, [signedIn, account.user, persist]);
+
+  /** Back one reading up, leaving the local copy authoritative either way. */
+  const backUp = useCallback(async (item: PaletteEntry) => {
+    if (!signedIn || !account.user) return;
+    setSync('working');
+    try {
+      const saved = await push(item, account.user.id);
+      setEntries((current) => {
+        const next = current.map((one) =>
+          (one.id === saved.id ? { ...one, imagePath: saved.imagePath } : one));
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(next)); } catch { /* full */ }
+        return next;
+      });
+      setSync('idle');
+    } catch { setSync('error'); }
+  }, [signedIn, account.user]);
+
+  const dropRemote = useCallback(async (item: PaletteEntry) => {
+    if (!signedIn) return;
+    try { await remove(item); } catch { setSync('error'); }
+  }, [signedIn]);
 
   useEffect(() => {
     if (!toast) return;
@@ -231,15 +297,23 @@ export default function Home() {
   }
 
   function updateEntry(next: PaletteEntry) {
-    setEntry(next);
-    if (saved) persist(entries.map((item) => (item.id === next.id ? next : item)));
+    const touched = { ...next, updatedAt: new Date().toISOString() };
+    setEntry(touched);
+    if (saved) {
+      persist(entries.map((item) => (item.id === touched.id ? touched : item)));
+      void backUp(touched);
+    }
   }
 
   function showCount(next: number, commit = false) {
     if (!entry) return;
     const recomposed = recompose(entry, { count: next });
     setEntry(recomposed);
-    if (commit && saved) persist(entries.map((item) => (item.id === recomposed.id ? recomposed : item)));
+    if (commit && saved) {
+      const touched = { ...recomposed, updatedAt: new Date().toISOString() };
+      persist(entries.map((item) => (item.id === touched.id ? touched : item)));
+      void backUp(touched);
+    }
     if (!recomposed.colors.some((color) => color.hex === selected?.hex)) {
       setSelected(recomposed.colors[recomposed.colors.length - 1]);
     }
@@ -247,11 +321,18 @@ export default function Home() {
 
   function saveEntry() {
     if (!entry || saved) return;
-    persist([entry, ...entries]);
+    const kept = { ...entry, updatedAt: new Date().toISOString() };
+    persist([kept, ...entries]);
+    setEntry(kept);
     setSaved(true);
     haptic(10);
     setScreen('journal');
-    setToast({ text: `${entry.title} kept in your journal` });
+    void backUp(kept);
+    setToast({
+      text: signedIn
+        ? `${kept.title} kept in your journal`
+        : `${kept.title} kept on this device`,
+    });
   }
 
   function openEntry(item: PaletteEntry) {
@@ -264,9 +345,15 @@ export default function Home() {
     persist([]);
     haptic([10, 40, 10]);
     setEntry(null); setSaved(false);
+    for (const item of previous) void dropRemote(item);
     setToast({
-      text: `${previous.length} reading${previous.length === 1 ? '' : 's'} erased from this device`,
-      undo: () => persist(previous),
+      text: signedIn
+        ? `${previous.length} reading${previous.length === 1 ? '' : 's'} erased from this device and your account`
+        : `${previous.length} reading${previous.length === 1 ? '' : 's'} erased from this device`,
+      undo: () => {
+        persist(previous);
+        for (const item of previous) void backUp(item);
+      },
     });
   }
 
@@ -275,7 +362,12 @@ export default function Home() {
     persist(entries.filter((kept) => kept.id !== item.id));
     haptic(10);
     if (thenGoToJournal) { setEntry(null); setSaved(false); setScreen('journal'); }
-    setToast({ text: `${item.title} removed`, undo: () => persist(previous) });
+    void dropRemote(item);
+    setToast({
+      text: `${item.title} removed`,
+      // Undo has to put it back in the account too, not just on the device.
+      undo: () => { persist(previous); void backUp(item); },
+    });
   }
 
   function removeSelected() {
@@ -380,6 +472,20 @@ export default function Home() {
   const selectedIndex = entry && selected ? entry.colors.findIndex((color) => color.hex === selected.hex) : 0;
   const latest = entries[0];
 
+  const accountBar = (
+    <AccountBar
+      status={account.status}
+      label={account.label}
+      sync={sync}
+      count={entries.length}
+      onSignIn={() => { void account.signIn(); }}
+      onSignOut={() => {
+        void account.signOut();
+        setToast({ text: 'Signed out — this journal stays on this device' });
+      }}
+    />
+  );
+
   const pickers = (
     <div className="pickers">
       <button type="button" className="action action-primary" onClick={() => cameraRef.current?.click()}>
@@ -406,7 +512,13 @@ export default function Home() {
           {pickers}
           {error
             ? <p className="note note-error" role="alert">{error}</p>
-            : <p className="note">Read on this device · nothing is uploaded</p>}
+            : <p className="note">
+                {signedIn
+                  ? 'Read on this device · kept in your account'
+                  : 'Read on this device · nothing is uploaded'}
+              </p>}
+
+          {accountBar}
 
           {latest ? (
             <>
@@ -634,10 +746,11 @@ export default function Home() {
           <h1 className="hello">Journal</h1>
           <p className="note note-left">
             {entries.length
-              ? `${entries.length} place${entries.length === 1 ? '' : 's'} kept on this device`
+              ? `${entries.length} place${entries.length === 1 ? '' : 's'} kept ${signedIn ? 'in your account' : 'on this device'}`
               : 'Nothing kept yet'}
           </p>
 
+          {accountBar}
           {pickers}
 
           {entries.length > 0 && (
