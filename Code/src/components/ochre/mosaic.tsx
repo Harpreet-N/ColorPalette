@@ -38,6 +38,8 @@ export function Mosaic({ colors, title, selected, onSelect, onRemove, canRemove 
         width: size.width,
         height: size.height,
         gap: size.width < 480 ? 5 : 7,
+        // Only on narrow screens: a pointer can hit a 20px tile, a thumb cannot.
+        minCell: size.width < 600 ? 44 : 0,
       }),
     [colors, size.width, size.height],
   );

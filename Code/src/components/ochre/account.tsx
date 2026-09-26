@@ -22,6 +22,10 @@ export function WelcomeGate({ onGoogle, onSkip, busy, trouble }: {
   busy: boolean;
   trouble?: string;
 }) {
+  // The official mark may not have been added to /public yet; swapping on the
+  // error event keeps the button usable either way.
+  const [markMissing, setMarkMissing] = useState(false);
+
   return (
     <section className="gate">
       <div className="gate-body">
@@ -36,9 +40,23 @@ export function WelcomeGate({ onGoogle, onSkip, busy, trouble }: {
         {trouble && <p className="gate-trouble" role="alert">{trouble}</p>}
 
         <div className="gate-actions">
-          <button type="button" className="action action-primary gate-primary"
-            onClick={onGoogle} disabled={busy}>
-            <LogIn aria-hidden="true" /> Continue with Google
+          {/*
+            Google's own branding guidelines govern this button: white
+            surface, hairline border, Roboto-ish label, and THEIR mark --
+            never a redrawn one. The file below is the official asset,
+            self-hosted so that opening Ochre still contacts no one. If it is
+            missing the button degrades to a neutral icon rather than
+            breaking, and it is still a valid sign-in control.
+          */}
+          <button type="button" className="gate-google" onClick={onGoogle} disabled={busy}>
+            <span className="gate-google-mark" aria-hidden="true">
+              {markMissing
+                ? <LogIn className="gate-google-fallback" />
+                /* eslint-disable-next-line @next/next/no-img-element */
+                : <img src="/google.svg" alt="" width={18} height={18}
+                    onError={() => setMarkMissing(true)} />}
+            </span>
+            Continue with Google
           </button>
 
           <button type="button" className="gate-skip" onClick={onSkip} disabled={busy}>
