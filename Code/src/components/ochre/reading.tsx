@@ -84,16 +84,18 @@ export function ColourRow({ color, index, selected, onSelect }: {
 }
 
 /** A kept place, as a reading. */
-export function EntryCard({ entry, onOpen, onForget, featured = false }: {
+export function EntryCard({ entry, onOpen, onForget, featured = false, compact = false }: {
   entry: PaletteEntry;
   onOpen: () => void;
   onForget?: () => void;
   featured?: boolean;
+  /** List view: the same card with the reading and the tags withheld. */
+  compact?: boolean;
 }) {
   const summary = read(entry);
   const when = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' }).format(new Date(entry.createdAt));
   return (
-    <li className={featured ? 'entry is-featured' : 'entry'}>
+    <li className={`entry${featured ? ' is-featured' : ''}${compact ? ' is-compact' : ''}`}>
       <button type="button" className="entry-open" onClick={onOpen}>
         <span className="entry-strip" aria-hidden="true">
           {entry.colors.slice(0, 8).map((color, position) => (
@@ -107,7 +109,7 @@ export function EntryCard({ entry, onOpen, onForget, featured = false }: {
             <small className="numeric">{when}</small>
           </span>
           {summary && <span className="entry-value numeric">{summary.dominant.hex}</span>}
-          {summary && <small className="entry-read">{summary.sentence}</small>}
+          {summary && !compact && <small className="entry-read">{summary.sentence}</small>}
           <span className="entry-meta">
             <span className="tag" style={{ ['--tint' as string]: FAMILY_TINT[summary?.family ?? 'Stone'] }}>
               {summary?.family ?? 'Stone'}

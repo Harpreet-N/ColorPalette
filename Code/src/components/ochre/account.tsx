@@ -8,7 +8,7 @@
  * prompts, nudges on the journal -- was removed, because an optional account
  * should be asked about once and then stop talking.
  */
-import { BookOpen, LogIn, LogOut, ShieldCheck, User } from 'lucide-react';
+import { BookOpen, LogIn, LogOut, ShieldCheck, Trash2, TriangleAlert, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { User as Account } from '@supabase/supabase-js';
 
@@ -31,11 +31,16 @@ export function WelcomeGate({ onGoogle, onSkip, busy, trouble }: {
       <div className="gate-body">
         <span className="wordmark-name gate-mark">ochre</span>
 
-        <h1 className="gate-title">Keep what you find.</h1>
+        <h1 className="gate-title">Save your palettes?</h1>
         <p className="gate-copy">
-          Sign in and your readings are saved to your account, so they are still
-          here tomorrow and on whatever device you open Ochre with next.
+          Signing in does one thing: it saves the palettes you make, so they are
+          still here next time and on your other devices.
         </p>
+        <ul className="gate-facts">
+          <li>Ochre only ever sees your name and email address.</li>
+          <li>There is no password to create, and nothing to pay.</li>
+          <li>You can sign out or ask for your account to be deleted at any time.</li>
+        </ul>
 
         {trouble && <p className="gate-trouble" role="alert">{trouble}</p>}
 
@@ -63,8 +68,8 @@ export function WelcomeGate({ onGoogle, onSkip, busy, trouble }: {
             Skip
           </button>
           <p className="gate-hint">
-            Ochre works exactly the same without an account — but nothing is saved.
-            Readings stay in this browser, and clearing your browsing data erases them.
+            Skipping is fine — the app works exactly the same. You just have to
+            download each palette to keep it, because nothing is saved for you.
           </p>
         </div>
       </div>
@@ -84,23 +89,33 @@ function initials(label: string) {
   return trimmed[0].toUpperCase();
 }
 
-export function UserMenu({ user, label, signedIn, onJournal, onSignIn, onSignOut }: {
+export function UserMenu({
+  user, label, signedIn, count, onJournal, onSignIn, onSignOut, onEraseAll, onDeleteAccount,
+}: {
   user: Account | null;
   label: string;
   signedIn: boolean;
+  /** How many palettes are about to be destroyed, so the warning is specific. */
+  count: number;
   onJournal: () => void;
   onSignIn: () => void;
   onSignOut: () => void;
+  onEraseAll: () => void;
+  onDeleteAccount: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  /** Destructive actions arm first and fire second; nothing here is one tap. */
+  const [arming, setArming] = useState<'none' | 'erase' | 'account'>('none');
   const wrap = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const away = (event: MouseEvent) => {
-      if (!wrap.current?.contains(event.target as Node)) setOpen(false);
+      if (!wrap.current?.contains(event.target as Node)) { setOpen(false); setArming('none'); }
     };
-    const key = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false); };
+    const key = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setOpen(false); setArming('none'); }
+    };
     document.addEventListener('pointerdown', away);
     document.addEventListener('keydown', key);
     return () => {
@@ -109,13 +124,78 @@ export function UserMenu({ user, label, signedIn, onJournal, onSignIn, onSignOut
     };
   }, [open]);
 
-  // Signed out, the corner is a way back in rather than a menu.
+  const danger = (
+    <>
+      {arming === 'erase' ? (
+        <div className="usermenu-confirm">
+          <p>
+            <TriangleAlert aria-hidden="true" />
+            Erase {count} palette{count === 1 ? '' : 's'}? This cannot be undone.
+          </p>
+          <div>
+            <button type="button" onClick={() => setArming('none')}>Keep them</button>
+            <button type="button" className="usermenu-go"
+              onClick={() => { setArming('none'); setOpen(false); onEraseAll(); }}>
+              Erase
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" role="menuitem" className="usermenu-danger"
+          onClick={() => setArming('erase')} disabled={!count}>
+          <Trash2 aria-hidden="true" /> Erase all palettes
+        </button>
+      )}
+
+      {signedIn && (arming === 'account' ? (
+        <div className="usermenu-confirm">
+          <p>
+            <TriangleAlert aria-hidden="true" />
+            Delete your account, and every palette in it, permanently?
+          </p>
+          <div>
+            <button type="button" onClick={() => setArming('none')}>Cancel</button>
+            <button type="button" className="usermenu-go"
+              onClick={() => { setArming('none'); setOpen(false); onDeleteAccount(); }}>
+              Delete account
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" role="menuitem" className="usermenu-danger"
+          onClick={() => setArming('account')}>
+          <TriangleAlert aria-hidden="true" /> Delete account
+        </button>
+      ))}
+    </>
+  );
+
+  // Signed out there is no account, but there is still local data to clear.
   if (!signedIn) {
     return (
-      <button type="button" className="avatar avatar-out" onClick={onSignIn}
-        aria-label="Sign in">
-        <User aria-hidden="true" />
-      </button>
+      <div className="usermenu" ref={wrap}>
+        <button type="button" className="avatar avatar-out"
+          onClick={() => setOpen((was) => !was)}
+          aria-haspopup="menu" aria-expanded={open} aria-label="Settings">
+          <User aria-hidden="true" />
+        </button>
+        {open && (
+          <div className="usermenu-pop" role="menu">
+            <div className="usermenu-who">
+              <strong>Not signed in</strong>
+              <span className="usermenu-state">Palettes are kept in this browser only.</span>
+            </div>
+            <button type="button" role="menuitem"
+              onClick={() => { setOpen(false); onSignIn(); }}>
+              <LogIn aria-hidden="true" /> Sign in to save them
+            </button>
+            <a role="menuitem" href="/storage" onClick={() => setOpen(false)}>
+              <ShieldCheck aria-hidden="true" /> What is stored
+            </a>
+            {danger}
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -151,6 +231,7 @@ export function UserMenu({ user, label, signedIn, onJournal, onSignIn, onSignOut
             onClick={() => { setOpen(false); onSignOut(); }}>
             <LogOut aria-hidden="true" /> Sign out
           </button>
+          {danger}
         </div>
       )}
     </div>

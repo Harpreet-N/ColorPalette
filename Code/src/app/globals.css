@@ -1112,3 +1112,111 @@ main.screen-frame ~ .site-legal-footer { display: none; }
 @media (hover: hover) and (pointer: fine) {
   .gate-google:hover { background: #f8f9fa; box-shadow: 0 1px 2px rgb(60 64 67 / .3), 0 1px 3px 1px rgb(60 64 67 / .15); }
 }
+
+/* The three reassurances on the sign-in screen. Plain facts, set quietly —
+   a bulleted list of promises shouted in bold reads as a sales page. */
+.gate-facts {
+  margin: 1rem 0 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: .35rem;
+}
+.gate-facts li {
+  position: relative; padding-left: 1.05rem;
+  color: var(--ink-soft); font-size: .82rem; line-height: 1.45;
+  text-wrap: pretty;
+}
+.gate-facts li::before {
+  content: ''; position: absolute; left: .1rem; top: .52em;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--ochre);
+}
+
+/* Shown only while signed out, immediately above the actions it talks about,
+   so "download it" and the Download button are read together. */
+.keep-warning {
+  margin: 0 0 .7rem;
+  padding: .8rem .9rem;
+  border-radius: 16px;
+  background: var(--ochre-wash);
+  color: var(--ink-soft); font-size: .8rem; line-height: 1.5;
+  text-wrap: pretty;
+}
+.keep-warning strong { display: block; margin-bottom: .15rem; color: var(--ink); font-weight: 600; }
+
+@media (min-width: 600px) {
+  .gate-facts li { font-size: .85rem; }
+}
+
+/* ------------------------------------------------------------------ *
+ * Journal: detail / list, and the signed-out warning.
+ * ------------------------------------------------------------------ */
+
+/* A two-way switch, not filter chips: one of the two is always on. */
+.viewswitch {
+  display: inline-flex; gap: 3px;
+  margin-top: 1rem; padding: 3px;
+  /* Concentric: 40px tall buttons + 3px padding -> 15px inner, 18px outer. */
+  border-radius: 18px;
+  background: var(--card);
+}
+.viewswitch button {
+  display: inline-flex; align-items: center; gap: .4rem;
+  min-height: 40px; padding: 0 .85rem;
+  border: 0; border-radius: 15px; background: transparent;
+  color: var(--stone); font-size: .78rem; cursor: pointer;
+  transition-property: background-color, color, scale;
+  transition-duration: 160ms; transition-timing-function: cubic-bezier(.2, 0, 0, 1);
+}
+.viewswitch button svg { width: 15px; height: 15px; }
+.viewswitch button:active { scale: .96; }
+.viewswitch .is-on { background: var(--raised); color: var(--ink); }
+
+@media (hover: hover) and (pointer: fine) {
+  .viewswitch button:not(.is-on):hover { color: var(--ink); }
+}
+
+/* List view: the same cards, tightened. The colour strip stays, because it
+   is the fastest way to recognise a palette at a glance. */
+.entries-list { gap: .45rem; }
+.entries-list .entry-open { padding: .55rem .7rem; gap: .7rem; }
+.entries-list .entry-strip { height: 46px; width: 46px; flex: none; border-radius: 13px; }
+.entries-list .entry-copy { gap: .1rem; }
+.entries-list .entry-value { font-size: .7rem; }
+.entries-list .entry-meta { margin-top: .1rem; }
+
+/* Signed out, the journal is genuinely at risk, so this panel says so. */
+.vault-warn { background: var(--ochre-wash); }
+.vault-warn .vault-glyph { background: color-mix(in srgb, var(--ochre) 22%, transparent); color: var(--ochre-deep); }
+.vault-warn .action-primary { margin-bottom: .5rem; }
+
+.vault-bare { margin-top: 1.6rem; }
+
+/* The upload reassurance, stated where the photo is chosen rather than
+   buried in the privacy page. */
+.note-upload { gap: .38rem; align-items: flex-start; text-wrap: pretty; }
+.note-upload svg { width: 12px; height: 12px; margin-top: .22em; flex: none; opacity: .7; }
+
+/* Destructive settings. They are armed before they fire, so the menu shows an
+   inline question rather than a browser dialog. */
+.usermenu-danger { color: var(--destructive) !important; }
+.usermenu-danger svg { color: var(--destructive) !important; }
+.usermenu-danger:disabled { opacity: .4; cursor: default; }
+
+.usermenu-confirm {
+  margin: .2rem .15rem; padding: .6rem .65rem;
+  /* Concentric: 13px items inside .35rem padding -> 18px here reads level. */
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+}
+.usermenu-confirm p {
+  display: flex; align-items: flex-start; gap: .4rem;
+  margin: 0 0 .5rem; color: var(--ink); font-size: .78rem; line-height: 1.4;
+  text-wrap: pretty;
+}
+.usermenu-confirm p svg { width: 14px; height: 14px; margin-top: .15em; flex: none; color: var(--destructive); }
+.usermenu-confirm div { display: flex; gap: .35rem; }
+.usermenu-confirm div button {
+  flex: 1; justify-content: center;
+  min-height: 40px; padding: 0 .6rem;
+  border-radius: 11px; background: var(--raised);
+  font-size: .78rem;
+}
+.usermenu-confirm .usermenu-go { background: var(--destructive); color: #fff; }

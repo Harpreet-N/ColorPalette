@@ -2,8 +2,8 @@
 /* oxlint-disable next/no-img-element */
 
 import {
-  ArrowLeft, Camera, Check, Download, Film, HardDrive, Images, Leaf,
-  Library, Plus, Share2, Trash2, X,
+  ArrowLeft, Camera, Check, Download, Film, Images, Leaf,
+  LayoutGrid, Library, List, Lock, Plus, Share2, Trash2, X,
 } from 'lucide-react';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { UserMenu, WelcomeGate } from '@/components/ochre/account';
@@ -17,8 +17,8 @@ import {
 } from '@/lib/palette';
 import { useAccount } from '@/lib/account';
 import { cloudConfigured } from '@/lib/supabase';
-import { merge, pull, push, remove } from '@/lib/cloud';
-import { FAMILIES, FAMILY_TINT, family, greeting, read } from '@/lib/reading';
+import { deleteAccount, eraseAll, merge, pull, push, remove } from '@/lib/cloud';
+import { FAMILY_TINT, greeting } from '@/lib/reading';
 import { haptic } from '@/lib/spring';
 
 type Screen = 'welcome' | 'home' | 'frame' | 'analyzing' | 'reading' | 'journal';
@@ -94,7 +94,7 @@ export default function Home() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [toastLeaving, setToastLeaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [filter, setFilter] = useState<string>('All');
+  const [view, setView] = useState<'detail' | 'list'>('detail');
   const [error, setError] = useState('');
   const [custom, setCustom] = useState('#C4873A');
   const [viewingPhoto, setViewingPhoto] = useState(false);
@@ -222,6 +222,23 @@ export default function Home() {
       setSync('idle');
     } catch { setSync('error'); }
   }, [signedIn, account.user]);
+
+  /** Delete the account, its photographs and everything kept on this device. */
+  const closeAccount = useCallback(async () => {
+    if (!account.user) return;
+    setSync('working');
+    try {
+      await deleteAccount(account.user.id);
+      persist([]);
+      try { localStorage.removeItem(ASKED_KEY); } catch { /* nothing to clear */ }
+      setEntry(null); setSaved(false); setScreen('home');
+      setSync('idle');
+      setToast({ text: 'Your account and every palette in it have been deleted' });
+    } catch {
+      setSync('error');
+      setToast({ text: 'The account could not be deleted — please try again' });
+    }
+  }, [account.user, persist]);
 
   const dropRemote = useCallback(async (item: PaletteEntry) => {
     if (!signedIn) return;
@@ -380,7 +397,7 @@ export default function Home() {
     persist([]);
     haptic([10, 40, 10]);
     setEntry(null); setSaved(false);
-    for (const item of previous) void dropRemote(item);
+    if (signedIn && account.user) void eraseAll(account.user.id).catch(() => setSync('error'));
     setToast({
       text: signedIn
         ? `${previous.length} reading${previous.length === 1 ? '' : 's'} erased from this device and your account`
@@ -498,7 +515,7 @@ export default function Home() {
     } else await exportPoster();
   }
 
-  const visible = filter === 'All' ? entries : entries.filter((item) => family(item.colors[0]) === filter);
+
   const pool = entry?.pool ?? entry?.colors ?? [];
   const available = pool.filter((color) => !(entry?.dropped ?? []).includes(color.hex));
   const maxCount = Math.max(1, available.length);
@@ -512,7 +529,10 @@ export default function Home() {
       user={account.user}
       label={account.label}
       signedIn={signedIn}
+      count={entries.length}
       onJournal={() => setScreen('journal')}
+      onEraseAll={eraseEverything}
+      onDeleteAccount={() => void closeAccount()}
       onSignIn={() => setScreen('welcome')}
       onSignOut={() => {
         void account.signOut();
@@ -556,10 +576,11 @@ export default function Home() {
           {pickers}
           {error
             ? <p className="note note-error" role="alert">{error}</p>
-            : <p className="note">
+            : <p className="note note-upload">
+                <Lock aria-hidden="true" />
                 {signedIn
-                  ? 'Read on this device · kept in your account'
-                  : 'Read on this device · nothing is uploaded'}
+                  ? 'Your photo is read here in your browser. It is only uploaded if you keep the palette.'
+                  : 'Your photo is read here in your browser and never uploaded anywhere.'}
               </p>}
 
           {latest ? (
@@ -606,8 +627,8 @@ export default function Home() {
                 <i style={{ background: FAMILY_TINT.Ember }} />
                 <i style={{ background: FAMILY_TINT.Stone }} />
               </span>
-              <h2>Ochre came out of the ground long before it came out of a tube.</h2>
-              <p>Photograph a place — a hillside, a leaf, a sky, or a frame from a video — and keep the colour it was made of.</p>
+              <h2>Take a photo to get its colours.</h2>
+              <p>Use the buttons above — a photo, or a video you pick a frame from. Ochre pulls out the colours it is made of and builds you a palette.</p>
             </div>
           )}
         </section>
@@ -747,6 +768,14 @@ export default function Home() {
 
             <section className="block block-last">
               <h2 className="block-title">Keep and share</h2>
+              {!signedIn && (
+                <p className="keep-warning">
+                  <strong>This palette is not saved anywhere yet.</strong>
+                  Download it as an image and it is yours to keep. Or sign in, and
+                  Ochre keeps every palette for you. Do neither and it disappears
+                  when you clear your browser.
+                </p>
+              )}
               <div className="stack">
                 <button type="button" className="action action-quiet" onClick={exportPoster}>
                   <Download aria-hidden="true" /> Export as an image
@@ -793,53 +822,41 @@ export default function Home() {
           </p>
 
           {pickers}
+          <p className="note note-left note-upload">
+            <Lock aria-hidden="true" />
+            {signedIn
+              ? 'Photos are read in your browser; only kept palettes are uploaded.'
+              : 'Photos are read in your browser and never uploaded anywhere.'}
+          </p>
 
           {entries.length > 0 && (
-            <div className="chips" role="group" aria-label="Filter by colour family">
-              {['All', ...FAMILIES].map((name) => (
-                <button key={name} type="button" className={filter === name ? 'chip is-on' : 'chip'}
-                  aria-pressed={filter === name} onClick={() => setFilter(name)}>{name}</button>
-              ))}
+            <div className="viewswitch" role="group" aria-label="How to show the journal">
+              <button type="button" className={view === 'detail' ? 'is-on' : ''}
+                aria-pressed={view === 'detail'} onClick={() => setView('detail')}>
+                <LayoutGrid aria-hidden="true" /> Detail
+              </button>
+              <button type="button" className={view === 'list' ? 'is-on' : ''}
+                aria-pressed={view === 'list'} onClick={() => setView('list')}>
+                <List aria-hidden="true" /> List
+              </button>
             </div>
           )}
 
-          {visible.length ? (
-            <ul className="entries">
-              {visible.map((item) => (
-                <EntryCard key={item.id} entry={item}
+          {entries.length ? (
+            <ul className={view === 'list' ? 'entries entries-list' : 'entries'}>
+              {entries.map((item) => (
+                <EntryCard key={item.id} entry={item} compact={view === 'list'}
                   onOpen={() => openEntry(item)} onForget={() => forget(item)} />
               ))}
             </ul>
           ) : (
             <div className="invite invite-small">
-              <h2>{entries.length ? 'Nothing in this family' : 'Your first walk is waiting'}</h2>
-              <p>{entries.length ? 'Try another colour family.' : 'Photograph a place and keep its colour.'}</p>
+              <h2>Your first walk is waiting</h2>
+              <p>Photograph a place and keep its colour.</p>
             </div>
           )}
 
-          {entries.length > 0 && (
-            <section className="vault" aria-labelledby="vault-title">
-              <div className="vault-read">
-                <span className="vault-glyph" aria-hidden="true"><HardDrive /></span>
-                <div>
-                  <h2 id="vault-title">On this device only</h2>
-                  <p className="numeric">
-                    {entries.length} reading{entries.length === 1 ? '' : 's'} ·{' '}
-                    {stored < 1024 * 1024
-                      ? `${Math.max(1, Math.round(stored / 1024))} KB`
-                      : `${(stored / 1024 / 1024).toFixed(1)} MB`} in this browser
-                  </p>
-                </div>
-              </div>
-              <p className="vault-note">
-                Ochre keeps no copy. Nothing is uploaded, and no one else can reach this —
-                which also means erasing it here cannot be undone later.
-              </p>
-              <button type="button" className="action action-danger" onClick={eraseEverything}>
-                <Trash2 aria-hidden="true" /> Erase everything
-              </button>
-            </section>
-          )}
+
         </section>
       )}
 

@@ -171,3 +171,42 @@ export function merge(local: PaletteEntry[], remote: PaletteEntry[]): PaletteEnt
     (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
   );
 }
+
+/** Remove every reading and photograph this account holds, keeping the account. */
+export async function eraseAll(userId: string): Promise<void> {
+  const client = supabase();
+  if (!client) return;
+
+  const { data: files } = await client.storage.from(PHOTO_BUCKET).list(userId, { limit: 1000 });
+  if (files?.length) {
+    await client.storage
+      .from(PHOTO_BUCKET)
+      .remove(files.map((file) => `${userId}/${file.name}`));
+  }
+  const { error } = await client.from('readings').delete().eq('user_id', userId);
+  if (error) throw error;
+}
+
+/**
+ * Close the account for good.
+ *
+ * Photographs go first, through the Storage API, because deleting the auth
+ * user cascades the database rows but leaves stored files behind. Only then
+ * does the RPC run: it takes no arguments and reads the caller's id from the
+ * verified token, so it can delete nobody else.
+ */
+export async function deleteAccount(userId: string): Promise<void> {
+  const client = supabase();
+  if (!client) return;
+
+  const { data: files } = await client.storage.from(PHOTO_BUCKET).list(userId, { limit: 1000 });
+  if (files?.length) {
+    await client.storage
+      .from(PHOTO_BUCKET)
+      .remove(files.map((file) => `${userId}/${file.name}`));
+  }
+
+  const { error } = await client.rpc('delete_account');
+  if (error) throw error;
+  await client.auth.signOut();
+}
